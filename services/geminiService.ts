@@ -1,10 +1,6 @@
-
 import { GoogleGenAI, Modality, Part } from "@google/genai";
 
-if (!process.env.API_KEY) {
-    throw new Error("API_KEY environment variable not set");
-}
-
+// Fix: Per coding guidelines, initialize GoogleGenAI with process.env.API_KEY, which is assumed to be available in the execution environment.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function generateStoryImage(parts: Part[]): Promise<string> {
