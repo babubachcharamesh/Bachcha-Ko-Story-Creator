@@ -15,6 +15,8 @@ const initialCharacters = Array.from({ length: 2 }, (_, i) => ({
 }));
 
 const LOCAL_STORAGE_KEY = 'bachchaStoryCreatorState';
+const PRESETS_STORAGE_KEY = 'bachchaStoryCreatorPresets';
+
 
 const getInitialState = () => {
     try {
@@ -27,6 +29,7 @@ const getInitialState = () => {
                 characters: characters || initialCharacters,
                 aspectRatio: savedState.aspectRatio || '1:1',
                 prompts: savedState.prompts || [''],
+                consistencyStrength: savedState.consistencyStrength ?? 0.8,
             };
         }
     } catch (error) {
@@ -36,6 +39,7 @@ const getInitialState = () => {
         characters: initialCharacters,
         aspectRatio: '1:1' as AspectRatio,
         prompts: [''],
+        consistencyStrength: 0.8,
     };
 };
 
@@ -44,11 +48,24 @@ const App: React.FC = () => {
     const [characters, setCharacters] = useState<Character[]>(getInitialState().characters);
     const [aspectRatio, setAspectRatio] = useState<AspectRatio>(getInitialState().aspectRatio);
     const [prompts, setPrompts] = useState<string[]>(getInitialState().prompts);
+    const [consistencyStrength, setConsistencyStrength] = useState<number>(getInitialState().consistencyStrength);
     const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [generationProgress, setGenerationProgress] = useState<GenerationProgress>({ current: 0, total: 0 });
     const [error, setError] = useState<string | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [savedPresets, setSavedPresets] = useState<{[key: string]: Omit<Character, 'file'>[]}>({});
+
+    useEffect(() => {
+        try {
+            const savedPresetsJSON = localStorage.getItem(PRESETS_STORAGE_KEY);
+            if (savedPresetsJSON) {
+                setSavedPresets(JSON.parse(savedPresetsJSON));
+            }
+        } catch (error) {
+            console.error("Failed to load presets from localStorage", error);
+        }
+    }, []);
 
     useEffect(() => {
         try {
@@ -63,18 +80,20 @@ const App: React.FC = () => {
                 characters: charactersToSave,
                 aspectRatio,
                 prompts,
+                consistencyStrength,
             };
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
         } catch (error) {
             console.error("Failed to save state to localStorage", error);
         }
-    }, [characters, aspectRatio, prompts]);
+    }, [characters, aspectRatio, prompts, consistencyStrength]);
 
     const handleLoadState = useCallback(() => {
         const loadedState = getInitialState();
         setCharacters(loadedState.characters);
         setAspectRatio(loadedState.aspectRatio);
         setPrompts(loadedState.prompts);
+        setConsistencyStrength(loadedState.consistencyStrength);
     }, []);
 
     const handleCharacterChange = useCallback(async (id: number, file: File | null) => {
@@ -123,6 +142,7 @@ const App: React.FC = () => {
         setCharacters(initialCharacters);
         setAspectRatio('1:1');
         setPrompts(['']);
+        setConsistencyStrength(0.8);
         setGeneratedImages([]);
         setIsLoading(false);
         setGenerationProgress({ current: 0, total: 0 });
@@ -130,6 +150,46 @@ const App: React.FC = () => {
         setPreviewImage(null);
     }, []);
 
+    const handleSavePreset = useCallback((name: string) => {
+        const charactersToSave = characters.map(({ id, name, base64, isSelected }) => ({
+            id,
+            name,
+            base64,
+            isSelected,
+        }));
+
+        const newPresets = { ...savedPresets, [name]: charactersToSave };
+        setSavedPresets(newPresets);
+        try {
+            localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(newPresets));
+            alert(`Preset "${name}" saved!`);
+        } catch (error) {
+            console.error("Failed to save presets to localStorage", error);
+            setError("Failed to save preset.");
+        }
+    }, [characters, savedPresets]);
+
+    const handleLoadPreset = useCallback((name: string) => {
+        const presetCharacters = savedPresets[name];
+        if (presetCharacters) {
+            const loadedCharacters = presetCharacters.map(c => ({
+                ...c,
+                file: null,
+            }));
+            setCharacters(loadedCharacters);
+        }
+    }, [savedPresets]);
+
+    const handleDeletePreset = useCallback((name: string) => {
+        const newPresets = { ...savedPresets };
+        delete newPresets[name];
+        setSavedPresets(newPresets);
+        try {
+            localStorage.setItem(PRESETS_STORAGE_KEY, JSON.stringify(newPresets));
+        } catch (error) {
+            console.error("Failed to delete preset from localStorage", error);
+        }
+    }, [savedPresets]);
 
     const handleGenerateAll = useCallback(async () => {
         const selectedCharacters = characters.filter(c => c.isSelected && c.base64);
@@ -149,10 +209,27 @@ const App: React.FC = () => {
         setGeneratedImages([]);
         setGenerationProgress({ current: 0, total: validPrompts.length });
 
+        const getConsistencyInstruction = (strength: number): string => {
+            if (strength <= 0.4) {
+                return "Use the provided images as loose inspiration for the characters' appearance.";
+            }
+            if (strength <= 0.7) {
+                return "Maintain the general appearance and style of the characters from the provided images, but allow for some creative interpretation.";
+            }
+            return "Recreate the characters from the provided images with high fidelity. Pay close attention to specific details like clothing, hairstyle, facial features, and color palette to ensure strict consistency.";
+        };
+
+        const consistencyInstruction = getConsistencyInstruction(consistencyStrength);
+        
+        const characterReferenceClauses = selectedCharacters.map((c, index) => {
+            const ordinals = ["first", "second", "third", "fourth", "fifth"]; // Extend if more are needed
+            const ordinal = ordinals[index] || `next`;
+            return `The ${ordinal} provided image is a reference for the character named '${c.name}'.`;
+        }).join(' ');
+
         const imageParts = selectedCharacters.map(c => ({
             inlineData: {
                 data: c.base64!.split(',')[1],
-                // When loading from localStorage, file is null. We need a default mimeType.
                 mimeType: c.file?.type || 'image/png',
             },
         }));
@@ -169,7 +246,7 @@ const App: React.FC = () => {
                 }
             });
 
-            const fullPrompt = `${modifiedPrompt}. Maintain character consistency from the provided images. Generate in 4k resolution with a ${aspectRatio} aspect ratio.`;
+            const fullPrompt = `${modifiedPrompt}. ${characterReferenceClauses} ${consistencyInstruction} Generate the image in a style consistent with the reference images and a ${aspectRatio} aspect ratio.`;
             
             try {
                 const textPart = { text: fullPrompt };
@@ -188,13 +265,12 @@ const App: React.FC = () => {
                     error: 'Image generation failed.',
                 });
             }
-            // Update state after each attempt to show progress in real-time
             setGeneratedImages([...newImages]);
             setGenerationProgress({ current: i + 1, total: validPrompts.length });
         }
 
         setIsLoading(false);
-    }, [characters, prompts, aspectRatio]);
+    }, [characters, prompts, aspectRatio, consistencyStrength]);
 
     const handleDownloadAll = useCallback(() => {
         const dateStr = formatDateForFilename();
@@ -232,6 +308,8 @@ const App: React.FC = () => {
                         setAspectRatio={setAspectRatio}
                         prompts={prompts}
                         setPrompts={setPrompts}
+                        consistencyStrength={consistencyStrength}
+                        setConsistencyStrength={setConsistencyStrength}
                         onCharacterChange={handleCharacterChange}
                         onCharacterNameChange={handleCharacterNameChange}
                         onToggleCharacterSelection={toggleCharacterSelection}
@@ -241,6 +319,10 @@ const App: React.FC = () => {
                         onClearAll={handleClearAll}
                         onLoadState={handleLoadState}
                         isLoading={isLoading}
+                        savedPresets={Object.keys(savedPresets)}
+                        onSavePreset={handleSavePreset}
+                        onLoadPreset={handleLoadPreset}
+                        onDeletePreset={handleDeletePreset}
                     />
                 </div>
                 <div className="flex-1">

@@ -9,9 +9,10 @@ interface ImageUploadSlotProps {
     onToggleSelection: (id: number) => void;
     onRemove: (id: number) => void;
     canRemove: boolean;
+    nameWarning: string | null;
 }
 
-export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character, onChange, onNameChange, onToggleSelection, onRemove, canRemove }) => {
+export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character, onChange, onNameChange, onToggleSelection, onRemove, canRemove, nameWarning }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,14 +35,18 @@ export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character,
                     <CloseIcon />
                 </button>
             )}
-            <input
-                type="text"
-                value={character.name}
-                onChange={(e) => onNameChange(id, e.target.value)}
-                placeholder={`Character ${id} Name`}
-                className="w-full bg-gray-600 border border-gray-500 rounded-md p-1.5 text-center text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500 transition"
-                aria-label={`Character ${id} name`}
-            />
+            <div className="w-full">
+                <input
+                    type="text"
+                    value={character.name}
+                    onChange={(e) => onNameChange(id, e.target.value)}
+                    placeholder={`Character ${id} Name`}
+                    className={`w-full bg-gray-600 border rounded-md p-1.5 text-center text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500 transition ${nameWarning ? 'border-yellow-500' : 'border-gray-500'}`}
+                    aria-label={`Character ${id} name`}
+                />
+                {nameWarning && <p className="text-xs text-yellow-400 text-center mt-1 px-1">{nameWarning}</p>}
+            </div>
+
             <div
                 className="w-full aspect-square bg-gray-700 rounded-lg flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-500 hover:border-red-400 transition relative group"
                 onClick={handleClick}
