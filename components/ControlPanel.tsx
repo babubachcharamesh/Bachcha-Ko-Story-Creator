@@ -14,6 +14,8 @@ interface ControlPanelProps {
     onGenerateAll: () => void;
     onAddCharacter: () => void;
     onRemoveCharacter: (id: number) => void;
+    onClearAll: () => void;
+    onLoadState: () => void;
     isLoading: boolean;
 }
 
@@ -29,6 +31,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     onGenerateAll,
     onAddCharacter,
     onRemoveCharacter,
+    onClearAll,
+    onLoadState,
     isLoading,
 }) => {
     return (
@@ -90,23 +94,43 @@ Character 1 flying over the city`}
                 />
             </div>
 
-            <button
-                onClick={onGenerateAll}
-                disabled={isLoading}
-                className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 disabled:bg-red-800 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
-            >
-                {isLoading ? (
-                    <>
-                        <SpinnerIcon />
-                        Generating...
-                    </>
-                ) : (
-                    <>
-                        <SparklesIcon />
-                        Generate All Images
-                    </>
-                )}
-            </button>
+            <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={onClearAll}
+                        disabled={isLoading}
+                        className="w-full border-2 border-gray-600 hover:border-red-500 text-gray-400 hover:text-red-400 font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out disabled:border-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        <TrashIcon />
+                        Clear All
+                    </button>
+                    <button
+                        onClick={onLoadState}
+                        disabled={isLoading}
+                        className="w-full border-2 border-gray-600 hover:border-green-500 text-gray-400 hover:text-green-400 font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out disabled:border-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        <LoadIcon />
+                        Load Saved
+                    </button>
+                </div>
+                <button
+                    onClick={onGenerateAll}
+                    disabled={isLoading}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-bold text-lg py-4 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 disabled:bg-red-800 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                >
+                    {isLoading ? (
+                        <>
+                            <SpinnerIcon />
+                            Generating...
+                        </>
+                    ) : (
+                        <>
+                            <SparklesIcon />
+                            Generate All Images
+                        </>
+                    )}
+                </button>
+            </div>
         </div>
     );
 };
@@ -125,8 +149,20 @@ const SpinnerIcon = () => (
     </svg>
 );
 
+const TrashIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    </svg>
+);
+
 const PlusIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+    </svg>
+);
+
+const LoadIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
     </svg>
 );

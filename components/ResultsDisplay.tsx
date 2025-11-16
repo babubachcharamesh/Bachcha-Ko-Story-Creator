@@ -11,7 +11,13 @@ interface ResultsDisplayProps {
     generationProgress: GenerationProgress;
 }
 
-const ImageErrorCard = ({ prompt, error }: { prompt: string; error: string }) => (
+interface ImageErrorCardProps {
+    prompt: string;
+    error: string;
+}
+
+// Fix: Explicitly type as React.FC to ensure TypeScript correctly handles the 'key' prop.
+const ImageErrorCard: React.FC<ImageErrorCardProps> = ({ prompt, error }) => (
     <div className="bg-red-900/30 border border-red-500/50 rounded-lg shadow-lg p-4 flex flex-col items-center justify-center text-center aspect-square" role="alert">
         <ErrorIcon />
         <p className="text-sm font-semibold text-red-400 mt-2">{error}</p>

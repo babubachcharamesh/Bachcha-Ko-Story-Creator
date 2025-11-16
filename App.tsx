@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ControlPanel } from './components/ControlPanel';
 import { ResultsDisplay } from './components/ResultsDisplay';
 import { ImagePreviewModal } from './components/ImagePreviewModal';
@@ -6,23 +6,76 @@ import { generateStoryImage } from './services/geminiService';
 import { fileToBase64, downloadImage, formatDateForFilename } from './utils/fileUtils';
 import { Character, AspectRatio, GeneratedImage, GenerationProgress } from './types';
 
-const App: React.FC = () => {
-    const initialCharacters = Array.from({ length: 2 }, (_, i) => ({
-        id: i + 1,
-        name: `Character ${i + 1}`,
-        file: null,
-        base64: null,
-        isSelected: false,
-    }));
+const initialCharacters = Array.from({ length: 2 }, (_, i) => ({
+    id: i + 1,
+    name: `Character ${i + 1}`,
+    file: null,
+    base64: null,
+    isSelected: false,
+}));
 
-    const [characters, setCharacters] = useState<Character[]>(initialCharacters);
-    const [aspectRatio, setAspectRatio] = useState<AspectRatio>('1:1');
-    const [prompts, setPrompts] = useState<string[]>(['']);
+const LOCAL_STORAGE_KEY = 'bachchaStoryCreatorState';
+
+const getInitialState = () => {
+    try {
+        const savedStateJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedStateJSON) {
+            const savedState = JSON.parse(savedStateJSON);
+            // Ensure characters have the 'file' property, even if it's null
+            const characters = savedState.characters.map((c: Omit<Character, 'file'>) => ({...c, file: null}));
+            return {
+                characters: characters || initialCharacters,
+                aspectRatio: savedState.aspectRatio || '1:1',
+                prompts: savedState.prompts || [''],
+            };
+        }
+    } catch (error) {
+        console.error("Failed to load state from localStorage", error);
+    }
+    return {
+        characters: initialCharacters,
+        aspectRatio: '1:1' as AspectRatio,
+        prompts: [''],
+    };
+};
+
+
+const App: React.FC = () => {
+    const [characters, setCharacters] = useState<Character[]>(getInitialState().characters);
+    const [aspectRatio, setAspectRatio] = useState<AspectRatio>(getInitialState().aspectRatio);
+    const [prompts, setPrompts] = useState<string[]>(getInitialState().prompts);
     const [generatedImages, setGeneratedImages] = useState<GeneratedImage[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [generationProgress, setGenerationProgress] = useState<GenerationProgress>({ current: 0, total: 0 });
     const [error, setError] = useState<string | null>(null);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+    useEffect(() => {
+        try {
+            const charactersToSave = characters.map(({ id, name, base64, isSelected }) => ({
+                id,
+                name,
+                base64,
+                isSelected,
+            }));
+    
+            const stateToSave = {
+                characters: charactersToSave,
+                aspectRatio,
+                prompts,
+            };
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+        } catch (error) {
+            console.error("Failed to save state to localStorage", error);
+        }
+    }, [characters, aspectRatio, prompts]);
+
+    const handleLoadState = useCallback(() => {
+        const loadedState = getInitialState();
+        setCharacters(loadedState.characters);
+        setAspectRatio(loadedState.aspectRatio);
+        setPrompts(loadedState.prompts);
+    }, []);
 
     const handleCharacterChange = useCallback(async (id: number, file: File | null) => {
         if (!file) {
@@ -66,6 +119,17 @@ const App: React.FC = () => {
         setCharacters(prev => prev.filter(c => c.id !== id));
     }, []);
 
+    const handleClearAll = useCallback(() => {
+        setCharacters(initialCharacters);
+        setAspectRatio('1:1');
+        setPrompts(['']);
+        setGeneratedImages([]);
+        setIsLoading(false);
+        setGenerationProgress({ current: 0, total: 0 });
+        setError(null);
+        setPreviewImage(null);
+    }, []);
+
 
     const handleGenerateAll = useCallback(async () => {
         const selectedCharacters = characters.filter(c => c.isSelected && c.base64);
@@ -88,7 +152,8 @@ const App: React.FC = () => {
         const imageParts = selectedCharacters.map(c => ({
             inlineData: {
                 data: c.base64!.split(',')[1],
-                mimeType: c.file!.type,
+                // When loading from localStorage, file is null. We need a default mimeType.
+                mimeType: c.file?.type || 'image/png',
             },
         }));
 
@@ -173,6 +238,8 @@ const App: React.FC = () => {
                         onGenerateAll={handleGenerateAll}
                         onAddCharacter={addCharacterSlot}
                         onRemoveCharacter={removeCharacterSlot}
+                        onClearAll={handleClearAll}
+                        onLoadState={handleLoadState}
                         isLoading={isLoading}
                     />
                 </div>

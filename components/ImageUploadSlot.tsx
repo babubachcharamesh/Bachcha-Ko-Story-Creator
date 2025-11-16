@@ -72,10 +72,10 @@ export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character,
                     type="checkbox"
                     checked={character.isSelected}
                     onChange={() => onToggleSelection(id)}
-                    disabled={!character.file}
+                    disabled={!character.base64}
                     className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-red-500 focus:ring-red-500 disabled:opacity-50"
                 />
-                <span className={`text-sm ${!character.file ? 'text-gray-500' : ''}`}>Include</span>
+                <span className={`text-sm ${!character.base64 ? 'text-gray-500' : ''}`}>Include</span>
             </div>
         </div>
     );
