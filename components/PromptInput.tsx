@@ -17,12 +17,12 @@ export const PromptInput: React.FC<PromptInputProps> = ({ index, value, onChange
                 value={value}
                 onChange={(e) => onChange(index, e.target.value)}
                 placeholder={`Prompt ${index + 1}`}
-                className="flex-grow bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                className="flex-grow bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
             />
             {canRemove && (
                 <button
                     onClick={() => onRemove(index)}
-                    className="p-2 bg-gray-600 hover:bg-red-500 rounded-full transition text-white"
+                    className="p-2 bg-gray-200 dark:bg-gray-600 hover:bg-red-500 rounded-full transition text-gray-800 dark:text-white"
                     aria-label="Remove prompt"
                 >
                    <TrashIcon/>

@@ -13,7 +13,7 @@ export const ImagePreviewModal: React.FC<ImagePreviewModalProps> = ({ imageUrl, 
             onClick={onClose}
         >
             <div 
-                className="bg-gray-900 p-4 rounded-lg shadow-2xl max-w-4xl max-h-[90vh] relative"
+                className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow-2xl max-w-4xl max-h-[90vh] relative"
                 onClick={(e) => e.stopPropagation()}
             >
                 <img src={imageUrl} alt="Full size preview" className="max-w-full max-h-[85vh] object-contain rounded-md" />

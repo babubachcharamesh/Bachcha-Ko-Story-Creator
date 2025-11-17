@@ -5,14 +5,14 @@ interface ImageUploadSlotProps {
     id: number;
     character: Character;
     onChange: (id: number, file: File | null) => void;
-    onNameChange: (id: number, name: string) => void;
+    onCharacterNameChange: (id: number, name: string) => void;
     onToggleSelection: (id: number) => void;
     onRemove: (id: number) => void;
     canRemove: boolean;
     nameWarning: string | null;
 }
 
-export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character, onChange, onNameChange, onToggleSelection, onRemove, canRemove, nameWarning }) => {
+export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character, onChange, onCharacterNameChange, onToggleSelection, onRemove, canRemove, nameWarning }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,16 +39,16 @@ export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character,
                 <input
                     type="text"
                     value={character.name}
-                    onChange={(e) => onNameChange(id, e.target.value)}
+                    onChange={(e) => onCharacterNameChange(id, e.target.value)}
                     placeholder={`Character ${id} Name`}
-                    className={`w-full bg-gray-600 border rounded-md p-1.5 text-center text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500 transition ${nameWarning ? 'border-yellow-500' : 'border-gray-500'}`}
+                    className={`w-full bg-gray-200 dark:bg-gray-600 border rounded-md p-1.5 text-center text-sm focus:ring-1 focus:ring-red-500 focus:border-red-500 transition ${nameWarning ? 'border-yellow-500' : 'border-gray-400 dark:border-gray-500'}`}
                     aria-label={`Character ${id} name`}
                 />
-                {nameWarning && <p className="text-xs text-yellow-400 text-center mt-1 px-1">{nameWarning}</p>}
+                {nameWarning && <p className="text-xs text-yellow-600 dark:text-yellow-400 text-center mt-1 px-1">{nameWarning}</p>}
             </div>
 
             <div
-                className="w-full aspect-square bg-gray-700 rounded-lg flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-500 hover:border-red-400 transition relative group"
+                className="w-full aspect-square bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center cursor-pointer border-2 border-dashed border-gray-400 dark:border-gray-500 hover:border-red-500 dark:hover:border-red-400 transition relative group"
                 onClick={handleClick}
             >
                 <input
@@ -66,7 +66,7 @@ export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character,
                         </div>
                     </>
                 ) : (
-                    <div className="text-center text-gray-400">
+                    <div className="text-center text-gray-500 dark:text-gray-400">
                         <UploadIcon />
                         <span className="text-xs">Upload Image</span>
                     </div>
@@ -78,9 +78,9 @@ export const ImageUploadSlot: React.FC<ImageUploadSlotProps> = ({ id, character,
                     checked={character.isSelected}
                     onChange={() => onToggleSelection(id)}
                     disabled={!character.base64}
-                    className="h-4 w-4 rounded bg-gray-600 border-gray-500 text-red-500 focus:ring-red-500 disabled:opacity-50"
+                    className="h-4 w-4 rounded bg-gray-300 dark:bg-gray-600 border-gray-400 dark:border-gray-500 text-red-500 focus:ring-red-500 disabled:opacity-50"
                 />
-                <span className={`text-sm ${!character.base64 ? 'text-gray-500' : ''}`}>Include</span>
+                <span className={`text-sm ${!character.base64 ? 'text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>Include</span>
             </div>
         </div>
     );
